@@ -1,15 +1,25 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
+import httpx
+from markdownify import markdownify
 
 from app.config import config
 from app.services.vectordb_service import VectorDB
+from app.services.prompt_manager import SYSTEM_PROMPT
 
 router = APIRouter(prefix="/api", tags=["Chat"])
 vectordb = VectorDB()
 
+OLLAMA_URL = "http://localhost:11434/api/chat"
+MODEL = "gemma3:270m"
+
 
 class ChatRequest(BaseModel):
     query: str
+
+
+class ChatResponse(BaseModel):
+    response: str
 
 
 @router.post("/chat")
@@ -46,14 +56,43 @@ async def chat(request: ChatRequest):
         top_n=3,
     )
 
-    return {
-        "query": request.query,
-        "results": [
-         {
-            "index": r.index,
-            "score": r.score,
-            "document": r.document,
-        }
-        for r in reranked.data
+    context = ""
+
+    for i, doc in enumerate(reranked.data, start=1):
+        context += f"""
+    Document {i}
+
+    Title:
+    {doc.document['metadata']['title']}
+
+    Description:
+    {doc.document['metadata']['description']}
+
+    ----------------------
+    """
+    
+
+    payload = {
+        "model": MODEL,
+        "messages": [
+            {
+                "role": "system",
+                "content" : SYSTEM_PROMPT,
+            },
+            {
+                "role": "user",
+                "content": context
+            }
         ],
+        "stream": False
     }
+
+    async with httpx.AsyncClient(timeout=60) as client:
+        r = await client.post(OLLAMA_URL, json=payload)
+
+    data = r.json()
+    print(data)
+
+    return ChatResponse(
+        response=markdownify(data["message"]["content"])
+    )

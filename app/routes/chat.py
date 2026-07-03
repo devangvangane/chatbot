@@ -6,12 +6,14 @@ from markdownify import markdownify
 from app.config import config
 from app.services.vectordb_service import VectorDB
 from app.services.prompt_manager import SYSTEM_PROMPT
+from app.utils.logger import logger
 
 router = APIRouter(prefix="/api", tags=["Chat"])
 vectordb = VectorDB()
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
-MODEL = "gemma3:270m"
+# MODEL = "gemma3:270m"
+MODEL = "phi4-mini"
 
 
 class ChatRequest(BaseModel):
@@ -48,6 +50,7 @@ async def chat(request: ChatRequest):
         }
         for match in search_results["matches"]
     ]
+    logger.info(f"Similarity search results : {len(documents)}")
 
     # Rerank
     reranked = vectordb.rerank(
@@ -55,6 +58,7 @@ async def chat(request: ChatRequest):
         documents=documents,
         top_n=3,
     )
+    logger.info(f"Vector reraank results : {len(reranked.data)}")
 
     context = ""
 
@@ -71,27 +75,22 @@ async def chat(request: ChatRequest):
     ----------------------
     """
     
+    formatted_prompt = SYSTEM_PROMPT.format(context=context, question=request.query)
 
     payload = {
         "model": MODEL,
         "messages": [
-            {
-                "role": "system",
-                "content" : SYSTEM_PROMPT,
-            },
-            {
-                "role": "user",
-                "content": context
-            }
+            {"role": "user", "content": formatted_prompt}
         ],
         "stream": False
     }
 
-    async with httpx.AsyncClient(timeout=60) as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=10.0)) as client:
         r = await client.post(OLLAMA_URL, json=payload)
-
-    data = r.json()
-    print(data)
+        logger.info(f"{r}")
+        data = r.json()
+        print(data)
+        logger.info(f"{data}")
 
     return ChatResponse(
         response=markdownify(data["message"]["content"])

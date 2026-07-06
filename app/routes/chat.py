@@ -62,7 +62,7 @@ async def chat(request: ChatRequest):
     reranked = await vectordb.rerank(
         query=request.query,
         documents=documents,
-        top_n=1,
+        top_n=3,
     )
     logger.info(f"Vector rerank results : {len(reranked.data)}")
 

@@ -4,7 +4,7 @@
 
 # Python cache
 .env
-**/__pycache__/
+__pycache__/
 *.py[cod]
 
 # Virtual environments
@@ -20,3 +20,4 @@ env/
 Thumbs.db
 
 logs
+todo.md

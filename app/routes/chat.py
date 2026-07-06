@@ -2,12 +2,18 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 import httpx
 from markdownify import markdownify
+import os
+from google import genai
+from google.genai import types
+from app.config import config
+import asyncio
 
 from app.config import config
 from app.services.vectordb_service import VectorDB
 from app.services.prompt_manager import SYSTEM_PROMPT
 from app.utils.logger import logger
 
+client = genai.Client(api_key=config.GEMINI_API_KEY)
 router = APIRouter(prefix="/api", tags=["Chat"])
 vectordb = VectorDB()
 
@@ -28,10 +34,10 @@ class ChatResponse(BaseModel):
 async def chat(request: ChatRequest):
 
     # Generate query embedding
-    query_embedding = vectordb.encode(request.query)
+    query_embedding = await vectordb.encode(request.query)
 
     # Search Pinecone
-    search_results = vectordb.search(
+    search_results = await vectordb.search(
         embedding=query_embedding,
         top_k=10,
     )
@@ -53,12 +59,12 @@ async def chat(request: ChatRequest):
     logger.info(f"Similarity search results : {len(documents)}")
 
     # Rerank
-    reranked = vectordb.rerank(
+    reranked = await vectordb.rerank(
         query=request.query,
         documents=documents,
-        top_n=3,
+        top_n=1,
     )
-    logger.info(f"Vector reraank results : {len(reranked.data)}")
+    logger.info(f"Vector rerank results : {len(reranked.data)}")
 
     context = ""
 
@@ -75,23 +81,30 @@ async def chat(request: ChatRequest):
     ----------------------
     """
     
-    formatted_prompt = SYSTEM_PROMPT.format(context=context, question=request.query)
+    formatted_prompt = SYSTEM_PROMPT.format(context=context, question=request.query, creator_name="Devang")
 
-    payload = {
-        "model": MODEL,
-        "messages": [
-            {"role": "user", "content": formatted_prompt}
-        ],
-        "stream": False
-    }
+    # payload = {
+    #     "model": MODEL,
+    #     "messages": [
+    #         {"role": "user", "content": formatted_prompt}
+    #     ],
+    #     "stream": False,
+    #      "options": {
+    #         "temperature": 0.3
+    #     }
+    # }
 
-    async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=10.0)) as client:
-        r = await client.post(OLLAMA_URL, json=payload)
-        logger.info(f"{r}")
-        data = r.json()
-        print(data)
-        logger.info(f"{data}")
+    response = await asyncio.to_thread(
+        client.models.generate_content,
+        model="gemini-2.5-flash",
+        contents=formatted_prompt,
+        config=types.GenerateContentConfig(
+            temperature=0.3,
+            max_output_tokens=300
+        )
+    )
+    logger.info(f"{response.text}")
 
     return ChatResponse(
-        response=markdownify(data["message"]["content"])
+        response=response.text
     )

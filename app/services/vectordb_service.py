@@ -72,7 +72,7 @@ class VectorDB:
     def upsert_batch(self, vectors: List[Dict]):
         return bool(self.index.upsert(vectors=vectors))
 
-    def encode(self, text: str) -> list[float]:
+    async def encode(self, text: str) -> list[float]:
         """
         Generate embedding for a single text.
         """
@@ -108,7 +108,7 @@ class VectorDB:
     # Search
     # -----------------------------
 
-    def search(
+    async def search(
         self,
         embedding: List[float],
         top_k: int = 5,
@@ -162,7 +162,7 @@ class VectorDB:
     # Rerank
     # -----------------------------
 
-    def rerank(
+    async def rerank(
         self,
         query: str,
         documents: List[Dict],

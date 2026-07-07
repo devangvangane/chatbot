@@ -32,7 +32,7 @@ class ChatResponse(BaseModel):
 
 async def encode(self, text: str) -> list[float]:
     result = await asyncio.to_thread(
-        self.gemini_client.models.embed_content,
+        client.models.embed_content,
         model="text-embedding-004",
         contents=text,
     )

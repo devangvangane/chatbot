@@ -14,9 +14,9 @@ class Config(BaseSettings):
     YOUTUBE_CHANNEL_NAME: str
 
     GEMINI_API_KEY: str
-    GEMINI_NAME: str
-    PROJECT_NAME: str
-    PROJECT_NUMBER: int
+    # GEMINI_NAME: str
+    # PROJECT_NAME: str
+    # PROJECT_NUMBER: int
 
     model_config = SettingsConfigDict(
         env_file=".env",

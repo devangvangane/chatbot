@@ -1,8 +1,5 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-import httpx
-from markdownify import markdownify
-import os
 from google import genai
 from google.genai import types
 from app.config import config
@@ -33,7 +30,7 @@ class ChatResponse(BaseModel):
 async def encode(text: str) -> list[float]:
     result = await asyncio.to_thread(
         client.models.embed_content,
-        model="text-embedding-004",
+        model="gemini-embedding-001",
         contents=text,
     )
     return result.embeddings[0].values

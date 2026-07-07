@@ -30,7 +30,7 @@ class ChatResponse(BaseModel):
     response: str
 
 
-async def encode(self, text: str) -> list[float]:
+async def encode(text: str) -> list[float]:
     result = await asyncio.to_thread(
         client.models.embed_content,
         model="text-embedding-004",

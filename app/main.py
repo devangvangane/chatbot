@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes.chat import router
 
 origins = [
-    "http://localhost:5173"
+    # "http://localhost:5173"
+    "https://devangv.netlify.app/"
 ]
 
 app = FastAPI()

@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, Optional
 
 from pinecone import Pinecone, ServerlessSpec
-from sentence_transformers import SentenceTransformer
+# from sentence_transformers import SentenceTransformer
 from app.config import config
 from app.services.youtube_fetch import YouTubeService
 
@@ -69,18 +69,18 @@ class VectorDB:
     def upsert_batch(self, vectors: List[Dict]):
         return bool(self.index.upsert(vectors=vectors))
 
-    async def encode(self, text: str) -> list[float]:
-        """
-        Generate embedding for a single text.
-        """
-        model = SentenceTransformer(config.EMBEDDING_MODEL)
+    # async def encode(self, text: str) -> list[float]:
+    #     """
+    #     Generate embedding for a single text.
+    #     """
+    #     model = SentenceTransformer(config.EMBEDDING_MODEL)
 
-        embedding = model.encode(
-            text,
-            normalize_embeddings=True
-        )
+    #     embedding = model.encode(
+    #         text,
+    #         normalize_embeddings=True
+    #     )
 
-        return embedding.tolist()
+    #     return embedding.tolist()
 
 
     def to_upsert_vectors(self, videos: List[Dict], embeddings: List[List[float]]) -> List[Dict]:

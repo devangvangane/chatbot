@@ -16,8 +16,7 @@ class VectorDB:
         metric: str = "cosine",
         cloud: str = "aws",
         region: str = "us-east-1",
-        model_name : str = config.EMBEDDING_MODEL
-    ):
+        ):
         self.pc = Pinecone(api_key=api_key)
         self.index_name = index_name
         self.dimension = dimension
@@ -25,8 +24,6 @@ class VectorDB:
 
         self._create_index_if_not_exists(cloud, region)
         self.index = self.pc.Index(index_name)
-
-        self.model = SentenceTransformer(model_name)
 
     # -----------------------------
     # Index Methods
@@ -76,7 +73,9 @@ class VectorDB:
         """
         Generate embedding for a single text.
         """
-        embedding = self.model.encode(
+        model = SentenceTransformer(config.EMBEDDING_MODEL)
+
+        embedding = model.encode(
             text,
             normalize_embeddings=True
         )

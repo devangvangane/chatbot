@@ -4,7 +4,7 @@ from app.routes.chat import router
 
 origins = [
     # "http://localhost:5173"
-    "https://devangv.netlify.app/"
+    "https://devangv.netlify.app"
 ]
 
 app = FastAPI()

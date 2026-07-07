@@ -19,7 +19,7 @@ vectordb = VectorDB()
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
 # MODEL = "gemma3:270m"
-MODEL = "phi4-mini"
+# MODEL = "phi4-mini"
 
 
 class ChatRequest(BaseModel):
@@ -30,11 +30,20 @@ class ChatResponse(BaseModel):
     response: str
 
 
+async def encode(self, text: str) -> list[float]:
+    result = await asyncio.to_thread(
+        self.gemini_client.models.embed_content,
+        model="text-embedding-004",
+        contents=text,
+    )
+    return result.embeddings[0].values
+
+
 @router.post("/chat")
 async def chat(request: ChatRequest):
 
     # Generate query embedding
-    query_embedding = await vectordb.encode(request.query)
+    query_embedding = await encode(request.query)
 
     # Search Pinecone
     search_results = await vectordb.search(

@@ -1,9 +1,13 @@
+import asyncio
+import json
 from typing import List, Dict, Any, Optional
-
+import time
 from pinecone import Pinecone, ServerlessSpec
 # from sentence_transformers import SentenceTransformer
 from app.config import config
 from app.services.youtube_fetch import YouTubeService
+
+from google import genai
 
 
 class VectorDB:
@@ -24,6 +28,7 @@ class VectorDB:
 
         self._create_index_if_not_exists(cloud, region)
         self.index = self.pc.Index(index_name)
+        self.client = genai.Client(api_key=config.GEMINI_API_KEY)
 
     # -----------------------------
     # Index Methods
@@ -80,7 +85,14 @@ class VectorDB:
     #         normalize_embeddings=True
     #     )
 
-    #     return embedding.tolist()
+        # return embedding.tolist()
+    
+    def encode(self, text: str) -> list[float]:
+        result = self.client.models.embed_content(
+            model="gemini-embedding-001",
+            contents=text,
+        )
+        return result.embeddings[0].values
 
 
     def to_upsert_vectors(self, videos: List[Dict], embeddings: List[List[float]]) -> List[Dict]:
@@ -179,14 +191,20 @@ class VectorDB:
 if __name__ == "__main__":
     youtube_s = YouTubeService()
     videos = youtube_s.get_channel_videos()
+    with open("videos.json", "w", encoding="utf-8") as f:
+        json.dump(videos, f, indent=4)
     print("Video content fetched.....")
-    vectordb =VectorDB()
-    embeddings = vectordb.encode([
-        f"Title: {v['title']}\n\nDescription:\n{v['description']}"
-        for v in videos
-    ])
+    vectordb = VectorDB()
+    embeddings = []
+    for v in videos:
+        text = f"Title: {v['title']}\n\nDescription:\n{v['description']}"
+        embedding = vectordb.encode(text)
+        embeddings.append(embedding)
+        time.sleep(1)
     print("Embedding generated .....")
     vectors = vectordb.to_upsert_vectors(videos, embeddings)
+    with open("vectors.json", "w", encoding="utf-8") as f:
+        json.dump(vectors, f, indent=4)
     print("Vectors created.....")
     upsert = vectordb.upsert_batch(vectors)
     print("Upsert condition :", upsert)

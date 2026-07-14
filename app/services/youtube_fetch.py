@@ -1,7 +1,7 @@
 import yt_dlp
 from typing import List, Dict
 from app.config import config
-
+import uuid
 
 class YouTubeService:
 
@@ -39,7 +39,7 @@ class YouTubeService:
                 )
 
             videos.append({
-                "id": video["id"],
+                "id": str(uuid.uuid4()),
                 "title": details.get("title"),
                 "description": details.get("description"),
                 "url": video_url,

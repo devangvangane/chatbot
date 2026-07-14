@@ -95,11 +95,11 @@ class VectorDB:
         return result.embeddings[0].values
 
 
-    def to_upsert_vectors(self, videos: List[Dict], embeddings: List[List[float]]) -> List[Dict]:
+    def to_upsert_vectors(self, videos: List[Dict], embeddings: List[List[float]], source: str) -> List[Dict]:
         """
         Convert videos and embeddings into Pinecone upsert format.
+        source: "youtube" or "github"
         """
-
         vectors = []
 
         for video, embedding in zip(videos, embeddings):
@@ -110,10 +110,25 @@ class VectorDB:
                     "title": video["title"],
                     "description": video["description"],
                     "url": video["url"],
+                    "source": source,
                 }
             })
 
         return vectors
+    
+    def ingest(self, items: List[Dict], source: str) -> bool:
+        """
+        Embed and upsert a batch of items, tagged with their source.
+        Each item must have: id, title, description, url
+        """
+        embeddings = []
+        for item in items:
+            text = f"Title: {item['title']}\n\nDescription:\n{item['description']}"
+            embedding = self.encode(text)
+            embeddings.append(embedding)
+
+        vectors = self.to_upsert_vectors(items, embeddings, source=source)
+        return self.upsert_batch(vectors)
 
     # -----------------------------
     # Search

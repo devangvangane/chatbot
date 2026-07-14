@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes.chat import router
+from app.routes.knowledge_base import router as kb_router
+
 
 origins = [
     # "http://localhost:5173"
@@ -17,3 +19,4 @@ app.add_middleware(CORSMiddleware,
 )
 
 app.include_router(router)
+app.include_router(kb_router)

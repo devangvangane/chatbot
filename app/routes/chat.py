@@ -9,6 +9,8 @@ from app.config import config
 from app.services.vectordb_service import VectorDB
 from app.services.prompt_manager import SYSTEM_PROMPT
 from app.utils.logger import logger
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 client = genai.Client(api_key=config.GEMINI_API_KEY)
 router = APIRouter(prefix="/api", tags=["Chat"])
@@ -17,6 +19,9 @@ vectordb = VectorDB()
 OLLAMA_URL = "http://localhost:11434/api/chat"
 # MODEL = "gemma3:270m"
 # MODEL = "phi4-mini"
+
+limiter = Limiter(key_func=get_remote_address)
+
 
 
 class ChatRequest(BaseModel):
@@ -37,6 +42,7 @@ async def encode(text: str) -> list[float]:
 
 
 @router.post("/chat")
+@limiter.limit("10/minute")
 async def chat(request: ChatRequest):
 
     # Generate query embedding
